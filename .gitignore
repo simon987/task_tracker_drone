@@ -1,4 +1,4 @@
 .idea/
 work/
 worker.json
-
+__pycache__/
