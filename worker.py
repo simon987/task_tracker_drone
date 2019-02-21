@@ -86,27 +86,3 @@ class WorkerContext:
                 print("SUBMIT: %s <%d>" % (task, r.status_code))
 
 
-api = TaskTrackerApi("http://localhost:42901")
-# w = api.make_worker("python_tt")
-# w.dump_to_file()
-
-w1 = Worker.from_file(api)
-
-# print(w1.request_access(1, True, True).text)
-
-
-# def submit(i):
-#     w1.submit_task(project=1, recipe=json.dumps({
-#         "tid": str(i),
-#     }), hash64=i)
-
-
-# pool = multiprocessing.Pool(processes=100)
-# pool.map(submit, range(0, 500000))
-# pool.join()
-# print(t.toJSON())
-
-t = w1.fetch_task()
-
-ctx = WorkerContext(w1, "main")
-ctx.execute_task(t)
