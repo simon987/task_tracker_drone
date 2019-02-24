@@ -1,11 +1,13 @@
 import datetime
 import json
 import os
+import random
 import shutil
 import subprocess
+import time
 from subprocess import Popen
 
-from api import Project, Worker, TaskTrackerApi, Task
+from tt_drone.api import Project, Worker, TaskTrackerApi, Task
 
 
 class WorkerContext:
@@ -86,3 +88,19 @@ class WorkerContext:
                 print("SUBMIT: %s <%d>" % (task, r.status_code))
 
 
+api = TaskTrackerApi("https://tt.simon987.net/api")
+w1 = Worker.from_file(api)
+ctx = WorkerContext(w1, "main")
+
+while True:
+    try:
+        t = w1.fetch_task()
+        ctx.execute_task(t)
+
+        time.sleep(random.randint(5, 45))
+    except KeyboardInterrupt:
+        print("Cancel current task...")
+        try:
+            w1.release_task(t.id, 2, 0)
+        except NameError:
+            pass

@@ -1,0 +1,33 @@
+def remote = [:]
+remote.name = 'remote'
+remote.host = 'localhost'
+remote.user = 'simon'
+remote.identityFile = '/var/lib/jenkins/.ssh/id_rsa'
+remote.knownHosts = '/var/lib/jenkins/.ssh/known_hosts'
+
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+			steps {
+				sh './jenkins/build.sh'
+				stash includes: 'env/', name: 'env'
+			}
+        }
+        stage('Test') {
+			steps {
+				unstash 'env'
+				sh 'bash -c "source env/bin/activate && cd src && python -m unittest discover"'
+			}
+        }
+        stage('Deploy') {
+            steps {
+				unstash 'env'
+				sshPut remote: remote, from: 'env', into: 'task_tracker_drone'
+				sshPut remote: remote, from: 'jenkins/deploy.sh', into: 'task_tracker_drone/deploy.sh'
+				sshPut remote: remote, from: 'src', into: 'task_tracker_drone'
+				sshCommand remote: remote, command: 'chmod +x task_tracker_drone/deploy.sh && ./task_tracker_drone/deploy.sh'
+            }
+        }
+   	}
+}
