@@ -1,12 +1,14 @@
 import base64
 import hashlib
+import hmac
 import json
+import os
+import time
 
 import requests
-import hmac
 
 API_TIMEOUT = 5
-MAX_HTTP_RETRIES = 2
+MAX_HTTP_RETRIES = 3
 VERSION = 1.0
 
 LOG_TRACE = 7
@@ -69,8 +71,8 @@ class Worker:
         self._secret_b64 = secret
         self._api: TaskTrackerApi = api
 
-    def fetch_task(self, project_id=None):
-        return self._api.fetch_task(self)
+    def fetch_task(self, project_id):
+        return self._api.fetch_task(self, project_id)
 
     def submit_task(self, project, recipe, priority=1, max_assign_time=3600, hash64=0, unique_str="",
                     verification_count=1, max_retries=3):
@@ -99,10 +101,12 @@ class Worker:
 
     @staticmethod
     def from_file(api):
-        with open("worker.json", "r") as f:
-            obj = json.load(f)
-            return Worker(wid=obj["id"], alias=obj["alias"],
-                          secret=obj["secret"], api=api)
+        if os.path.exists("worker.json"):
+            with open("worker.json", "r") as f:
+                obj = json.load(f)
+                return Worker(wid=obj["id"], alias=obj["alias"],
+                              secret=obj["secret"], api=api)
+        return None
 
 
 def format_headers(ua: str = None, wid: int = None, signature: str = None):
@@ -137,8 +141,9 @@ class TaskTrackerApi:
                             json_response["content"]["worker"]["secret"], self)
             return worker
 
-    def fetch_task(self, worker: Worker) -> Task:
-        response = self._http_get("/task/get", worker)
+    def fetch_task(self, worker: Worker, project_id: int) -> Task:
+        response = self._http_get("/task/get/%d" % (project_id, ), worker)
+
         if response:
             json_response = json.loads(response.text)
             if json_response["ok"]:
@@ -201,9 +206,16 @@ class TaskTrackerApi:
             try:
                 response = requests.get(self.url + endpoint, timeout=API_TIMEOUT,
                                         headers=headers)
+
+                if response.status_code == 429:
+                    delay = json.loads(response.text)["rate_limit_delay"] * 20
+                    time.sleep(delay)
+                    continue
+
                 return response
-            except:
+            except Exception as e:
                 retries += 1
+                print("ERROR: %s" % (e, ))
                 pass
         return None
 
@@ -221,10 +233,16 @@ class TaskTrackerApi:
             try:
                 response = requests.post(self.url + endpoint, timeout=API_TIMEOUT,
                                          headers=headers, data=body_bytes)
+
+                if response.status_code == 429:
+                    delay = json.loads(response.text)["rate_limit_delay"] * 20
+                    time.sleep(delay)
+                    continue
+
                 return response
-            except:
+            except Exception as e:
+                print(str(type(e)) + str(e))
                 retries += 1
                 pass
         return None
-
 
