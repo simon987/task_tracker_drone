@@ -58,7 +58,9 @@ class WorkerContext:
                 self._do_post_task_hooks(json_result)
                 print(self._worker.release_task(task.id,
                                                 json_result["result"],
-                                                json_result["verification"] if "verification" in json_result else 0).text)
+                                                json_result[
+                                                    "verification"] if "verification" in json_result else 0).text
+                      + "for result" + result)
             except Exception as e:
                 return
 

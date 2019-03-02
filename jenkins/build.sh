@@ -1,6 +1,6 @@
 #!/bin/bash
 
-virtualenv env --download --always-copy --clear -p python3.7
+virtualenv env --download --clear -p python3.7
 source env/bin/activate
 python --version
 
