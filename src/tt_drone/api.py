@@ -4,7 +4,7 @@ import hmac
 import json
 import os
 import time
-
+from email.utils import formatdate
 import requests
 
 API_TIMEOUT = 5
@@ -109,7 +109,7 @@ class Worker:
         return None
 
 
-def format_headers(ua: str = None, wid: int = None, signature: str = None):
+def format_headers(ts: str = None, ua: str = None, wid: int = None, signature: str = None):
     headers = dict()
 
     if ua is None:
@@ -119,6 +119,7 @@ def format_headers(ua: str = None, wid: int = None, signature: str = None):
 
     headers["X-Worker-Id"] = str(wid)
     headers["X-Signature"] = str(signature)
+    headers["Timestamp"] = str(ts)
 
     return headers
 
@@ -197,8 +198,9 @@ class TaskTrackerApi:
 
     def _http_get(self, endpoint: str, worker: Worker = None):
         if worker is not None:
-            signature = hmac.new(key=worker.secret, msg=endpoint.encode("utf8"), digestmod=hashlib.sha256).hexdigest()
-            headers = format_headers(signature=signature, wid=worker.id)
+            ts = formatdate(timeval=None, localtime=False, usegmt=True)
+            signature = hmac.new(key=worker.secret, msg=(endpoint + ts).encode("utf8"), digestmod=hashlib.sha256).hexdigest()
+            headers = format_headers(signature=signature, wid=worker.id, ts=ts)
         else:
             headers = format_headers()
         retries = 0
@@ -221,18 +223,19 @@ class TaskTrackerApi:
 
     def _http_post(self, endpoint: str, body, worker: Worker = None):
 
-        body_bytes = json.dumps(body).encode("utf8")
+        body = json.dumps(body)
 
         if worker is not None:
-            signature = hmac.new(key=worker.secret, msg=body_bytes, digestmod=hashlib.sha256).hexdigest()
-            headers = format_headers(signature=signature, wid=worker.id)
+            ts = formatdate(timeval=None, localtime=False, usegmt=True)
+            signature = hmac.new(key=worker.secret, msg=(body + ts).encode("utf8"), digestmod=hashlib.sha256).hexdigest()
+            headers = format_headers(signature=signature, wid=worker.id, ts=ts)
         else:
             headers = format_headers()
         retries = 0
         while retries < MAX_HTTP_RETRIES:
             try:
                 response = requests.post(self.url + endpoint, timeout=API_TIMEOUT,
-                                         headers=headers, data=body_bytes)
+                                         headers=headers, data=body.encode("utf8"))
 
                 if response.status_code == 429:
                     delay = json.loads(response.text)["rate_limit_delay"] * 20
