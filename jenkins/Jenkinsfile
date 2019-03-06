@@ -16,13 +16,11 @@ pipeline {
         }
         stage('Test') {
 			steps {
-				unstash 'env'
 				sh 'bash -c "source env/bin/activate && cd src && python -m unittest discover"'
 			}
         }
         stage('Deploy') {
             steps {
-				unstash 'env'
 				sshPut remote: remote, from: 'env', into: 'task_tracker_drone'
 				sshPut remote: remote, from: 'jenkins/deploy.sh', into: 'task_tracker_drone/deploy.sh'
 				sshPut remote: remote, from: 'src', into: 'task_tracker_drone'
