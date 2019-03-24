@@ -53,6 +53,9 @@ class Task:
         self.assign_time: int = json_obj["assign_time"]
         self.verification_count: int = json_obj["verification_count"]
 
+    def json_recipe(self) -> dict:
+        return json.loads(self.recipe)
+
     def toJSON(self):
         return json.dumps({
             "id": self.id, "priority": self.priority,
