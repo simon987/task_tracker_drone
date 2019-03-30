@@ -1,10 +1,8 @@
 import base64
-import hashlib
-import hmac
 import json
 import os
 import time
-from email.utils import formatdate
+
 import requests
 
 API_TIMEOUT = 5
@@ -71,7 +69,7 @@ class Worker:
         self.id: int = wid
         self.alias: str = alias
         self.secret: bytes = base64.b64decode(secret)
-        self._secret_b64 = secret
+        self.secret_b64 = secret
         self._api: TaskTrackerApi = api
 
     def fetch_task(self, project_id):
@@ -99,7 +97,7 @@ class Worker:
             json.dump({
                 "id": self.id,
                 "alias": self.alias,
-                "secret": self._secret_b64
+                "secret": self.secret_b64
             }, out)
 
     @staticmethod
@@ -112,7 +110,7 @@ class Worker:
         return None
 
 
-def format_headers(ts: str = None, ua: str = None, wid: int = None, signature: str = None):
+def format_headers(ua: str = None, wid: int = None, secret: str = None):
     headers = dict()
 
     if ua is None:
@@ -121,8 +119,7 @@ def format_headers(ts: str = None, ua: str = None, wid: int = None, signature: s
         headers["User-Agent"] = ua
 
     headers["X-Worker-Id"] = str(wid)
-    headers["X-Signature"] = str(signature)
-    headers["Timestamp"] = str(ts)
+    headers["X-Secret"] = str(secret)
 
     return headers
 
@@ -146,7 +143,7 @@ class TaskTrackerApi:
             return worker
 
     def fetch_task(self, worker: Worker, project_id: int) -> Task:
-        response = self._http_get("/task/get/%d" % (project_id, ), worker)
+        response = self._http_get("/task/get/%d" % (project_id,), worker)
 
         if response:
             json_response = json.loads(response.text)
@@ -170,13 +167,17 @@ class TaskTrackerApi:
 
     def log(self, worker: Worker, level: int, message: str, timestamp: int, scope: str):
         if level == LOG_TRACE:
-            return self._http_post("/log/trace", {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
+            return self._http_post("/log/trace",
+                                   {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
         if level == LOG_INFO:
-            return self._http_post("/log/info", {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
+            return self._http_post("/log/info",
+                                   {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
         if level == LOG_WARN:
-            return self._http_post("/log/warn", {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
+            return self._http_post("/log/warn",
+                                   {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
         if level == LOG_ERROR:
-            return self._http_post("/log/error", {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
+            return self._http_post("/log/error",
+                                   {"level": level, "message": message, "timestamp": timestamp, "scope": scope}, worker)
 
         print("Invalid log level")
 
@@ -187,7 +188,7 @@ class TaskTrackerApi:
             "verification": verification
         }, worker)
 
-    def request_access(self, worker: Worker, project: int, assign:bool, submit:bool):
+    def request_access(self, worker: Worker, project: int, assign: bool, submit: bool):
         return self._http_post("/project/request_access", {
             "project": project,
             "assign": assign,
@@ -201,9 +202,7 @@ class TaskTrackerApi:
 
     def _http_get(self, endpoint: str, worker: Worker = None):
         if worker is not None:
-            ts = formatdate(timeval=None, localtime=False, usegmt=True)
-            signature = hmac.new(key=worker.secret, msg=(endpoint + ts).encode("utf8"), digestmod=hashlib.sha256).hexdigest()
-            headers = format_headers(signature=signature, wid=worker.id, ts=ts)
+            headers = format_headers(secret=worker.secret_b64, wid=worker.id)
         else:
             headers = format_headers()
         retries = 0
@@ -220,7 +219,7 @@ class TaskTrackerApi:
                 return response
             except Exception as e:
                 retries += 1
-                print("ERROR: %s" % (e, ))
+                print("ERROR: %s" % (e,))
                 pass
         return None
 
@@ -229,9 +228,7 @@ class TaskTrackerApi:
         body = json.dumps(body)
 
         if worker is not None:
-            ts = formatdate(timeval=None, localtime=False, usegmt=True)
-            signature = hmac.new(key=worker.secret, msg=(body + ts).encode("utf8"), digestmod=hashlib.sha256).hexdigest()
-            headers = format_headers(signature=signature, wid=worker.id, ts=ts)
+            headers = format_headers(secret=worker.secret_b64, wid=worker.id)
         else:
             headers = format_headers()
         retries = 0
@@ -251,4 +248,3 @@ class TaskTrackerApi:
                 retries += 1
                 pass
         return None
-
