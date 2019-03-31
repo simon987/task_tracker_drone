@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import traceback
 from subprocess import Popen
 
 from tt_drone.api import (Project, Worker, Task)
@@ -62,7 +63,10 @@ class WorkerContext:
                                                     "verification"] if "verification" in json_result else 0).text
                       + "for result" + result)
             except Exception as e:
+                print(str(e) + traceback.format_exc())
                 return
+        else:
+            print(path + "/run doesn't exist!")
 
     def _do_post_task_hooks(self, res):
 

@@ -100,6 +100,9 @@ class Worker:
                 "secret": self.secret_b64
             }, out)
 
+    def get_project_list(self):
+        return self._api.get_project_list(self).json()["content"]["projects"]
+
     @staticmethod
     def from_file(api):
         if os.path.exists("worker.json"):
@@ -199,6 +202,9 @@ class TaskTrackerApi:
         r = self._http_get("/project/secret/" + str(project), worker)
         if r.status_code == 200:
             return json.loads(r.text)["content"]["secret"]
+
+    def get_project_list(self, worker: Worker):
+        return self._http_get("/project/list", worker)
 
     def _http_get(self, endpoint: str, worker: Worker = None):
         if worker is not None:

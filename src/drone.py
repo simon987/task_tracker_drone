@@ -33,14 +33,24 @@ signal.signal(signal.SIGTERM, cleanup)
 
 def drone(ctx: WorkerContext):
     global die
+
+    sorted_projects = sorted(worker.get_project_list(), key=lambda p: p["priority"], reverse=True)
+
     while not die:
-        task = worker.fetch_task(1)
+        task = None
         try:
-            if task is not None:
-                with lock:
-                    current_tasks.add(task.id)
-                ctx.execute_task(task)
-            else:
+            ok = False
+            for project in sorted_projects:
+                task = worker.fetch_task(project["id"])
+                if task is not None:
+                    with lock:
+                        current_tasks.add(task.id)
+                    ctx.execute_task(task)
+                    ok = True
+                    break
+
+            if not ok:
+                print("No tasks, waiting")
                 time.sleep(10)
         finally:
             with lock:
@@ -56,8 +66,10 @@ worker = Worker.from_file(api)
 if not worker:
     worker = api.make_worker("drone")
     worker.dump_to_file()
-    worker.request_access(1, True, False)
-
+    projects = worker.get_project_list()
+    for project in projects:
+        r = worker.request_access(project["id"], assign=True, submit=False)
+        print("Request access for %d r=%s" % (project["id"], r.text))
 
 print("Starting %d working contexts" % (THREAD_COUNT,))
 for i in range(THREAD_COUNT):
