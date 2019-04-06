@@ -80,6 +80,9 @@ class Worker:
         return self._api.submit_task(self, project, recipe, priority, max_assign_time, hash64, unique_str,
                                      verification_count, max_retries)
 
+    def bulk_submit_task(self, project, reqs):
+        return self._api.bulk_submit_task(self, project, reqs)
+
     def release_task(self, task_id: int, result: int, verification):
         return self._api.release_task(self, task_id, result, verification)
 
@@ -166,6 +169,20 @@ class TaskTrackerApi:
             "unique_str": unique_str,
             "verification_count": verification_count,
             "max_retries": max_retries,
+        }, worker)
+
+    def bulk_submit_task(self, worker: Worker, project, tasks):
+        return self._http_post("/task/bulk_submit", {
+            "requests": {
+                "project": project,
+                "recipe": req.recipe,
+                "priority": req.priority,
+                "max_assign_time": req.max_assign_time,
+                "hash_u64": req.hash64,
+                "unique_str": req.unique_str,
+                "verification_count": req.verification_count,
+                "max_retries": req.max_retries,
+            } for req in tasks
         }, worker)
 
     def log(self, worker: Worker, level: int, message: str, timestamp: int, scope: str):
