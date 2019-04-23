@@ -66,10 +66,10 @@ worker = Worker.from_file(api)
 if not worker:
     worker = api.make_worker("drone")
     worker.dump_to_file()
-    projects = worker.get_project_list()
-    for project in projects:
-        r = worker.request_access(project["id"], assign=True, submit=False)
-        print("Request access for %d r=%s" % (project["id"], r.text))
+projects = worker.get_project_list()
+for project in projects:
+    r = worker.request_access(project["id"], assign=True, submit=False)
+    print("Request access for %d r=%s" % (project["id"], r.text))
 
 print("Starting %d working contexts" % (THREAD_COUNT,))
 for i in range(THREAD_COUNT):
