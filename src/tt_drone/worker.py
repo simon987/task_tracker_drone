@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 import traceback
 from subprocess import Popen
 
@@ -48,6 +49,7 @@ class WorkerContext:
         return self._format_project_path(project)
 
     def execute_task(self, task: Task):
+        start_time = time.time()
         path = self._get_project_path(task.project)
 
         if os.path.exists(os.path.join(path, "run")):
@@ -57,14 +59,14 @@ class WorkerContext:
             try:
                 json_result = json.loads(result)
                 self._do_post_task_hooks(json_result)
+                end_time = time.time()
                 print(self._worker.release_task(task.id,
                                                 json_result["result"],
                                                 json_result[
                                                     "verification"] if "verification" in json_result else 0).text
-                      + "for result" + result)
+                      + " in " + str(end_time - start_time) + "ms")
             except Exception as e:
                 print(str(e) + traceback.format_exc())
-                return
         else:
             print(path + "/run doesn't exist!")
 
