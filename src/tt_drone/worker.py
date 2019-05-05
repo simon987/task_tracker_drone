@@ -64,7 +64,7 @@ class WorkerContext:
                                                 json_result["result"],
                                                 json_result[
                                                     "verification"] if "verification" in json_result else 0).text
-                      + " in " + str(end_time - start_time) + "ms")
+                      + " in " + str(end_time - start_time) + "s")
             except Exception as e:
                 print(str(e) + traceback.format_exc())
         else:

@@ -2,6 +2,8 @@
 
 export DRONEROOT="task_tracker_drone"
 
+screen -S tt_drone -X quit
+
 cd ${DRONEROOT}
 virtualenv env --download --clear -p python3.7
 source env/bin/activate
@@ -9,7 +11,6 @@ python --version
 pip install -r requirements.txt
 deactivate
 
-screen -S tt_drone -X quit
 echo "starting drone"
 screen -S tt_drone -d -m bash -c "source env/bin/activate && python src/drone.py"
 sleep 1
