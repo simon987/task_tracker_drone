@@ -2,6 +2,8 @@ import signal
 import threading
 import time
 
+import sys
+
 from tt_drone.api import (Worker, TaskTrackerApi)
 from tt_drone.worker import (WorkerContext)
 
@@ -61,10 +63,10 @@ def drone(ctx: WorkerContext):
                     pass
 
 
-api = TaskTrackerApi("https://tt.simon987.net/api")
+api = TaskTrackerApi(sys.argv[1])
 worker = Worker.from_file(api)
 if not worker:
-    worker = api.make_worker("drone")
+    worker = api.make_worker(sys.argv[2])
     worker.dump_to_file()
 projects = worker.get_project_list()
 for project in projects:
