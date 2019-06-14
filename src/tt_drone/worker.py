@@ -30,11 +30,11 @@ class WorkerContext:
             shutil.rmtree(path)
 
         os.makedirs(path, exist_ok=True)
-        proc = Popen(args=["git", "clone", project.clone_url, path])
+        proc = Popen(args=["git", "clone", "-q", project.clone_url, path])
         proc.wait()
 
         if project.version:
-            proc = Popen(args=["git", "checkout", project.version], cwd=os.path.abspath(path))
+            proc = Popen(args=["git", "checkout", "-q", project.version], cwd=os.path.abspath(path))
             proc.wait()
 
         if os.path.exists(os.path.join(path, "setup")):
