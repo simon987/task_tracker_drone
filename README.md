@@ -1,4 +1,4 @@
-[![Build Status](https://ci.simon987.net/buildStatus/icon?job=task_tracker_drone)](https://ci.simon987.net/job/task_tracker_drone/) [![CodeFactor](https://www.codefactor.io/repository/github/simon987/task_tracker_drone/badge)](https://www.codefactor.io/repository/github/simon987/task_tracker_drone)
+[![CodeFactor](https://www.codefactor.io/repository/github/simon987/task_tracker_drone/badge)](https://www.codefactor.io/repository/github/simon987/task_tracker_drone)
 
 General purpose 'set and forget' task runner and API wrapper for [simon987/task_tracker](https://github.com/simon987/task_tracker).
 
@@ -12,19 +12,8 @@ python -m unittest discover
 
 ## Usage (task runner daemon)
 
-Python 3.7
+*(Deprecated, please use [task_tracker_drone_go](https://github.com/simon987/task_tracker_drone_go) to use as a task runner)*
 
-```bash
-git clone https://github.com/simon987/task_tracker_drone
-cd task_tracker_drone
-python -m pip install -r requirements.txt
-
-cd src
-python ./drone.py "http://exemple-api-url.com/" "alias"
-# You will have to manually grant permission to the worker from the
-# web UI (For private/hidden projects)
-
-```
 
 ## Usage (Library)
 
